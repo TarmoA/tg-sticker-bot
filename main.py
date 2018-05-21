@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Hi!')
+    update.message.reply_text('Send me a picture in a private message to add it to a sticker pack')
 
 
 
@@ -52,9 +52,12 @@ def error(bot, update, error):
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
-    keyDict = json.loads(open("key.json").read())
+    if 'HEROKU' in os.environ:
+        key = os.environ['BOT_KEY']
+    else:
+        key = json.loads(open("key.json").read())['key']
 
-    updater = Updater(keyDict['key'])
+    updater = Updater(key)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
