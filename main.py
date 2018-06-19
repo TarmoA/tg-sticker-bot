@@ -2,6 +2,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging, json, os, sys
 import resize
 import sticker as stickerModule
+import drawText
 
 BASE_FILE_PATH = os.path.abspath(os.path.dirname(sys.argv[0])) + "/tmp/{}_{}.jpg"
 # Enable logging
@@ -30,8 +31,10 @@ def handlePhoto(bot, update):
         filePath = BASE_FILE_PATH.format(chatId, messageId)
         file = bot.get_file(photoObj.file_id)
         file.download(filePath)
-        thumbPath = resize.resize(filePath)
-        sticker = stickerModule.createSticker(bot, user.id, thumbPath)
+        imgPath = resize.resize(filePath)
+        if (message.caption):
+            imgPath = drawText.draw(imgPath, message.caption)
+        sticker = stickerModule.createSticker(bot, user.id, imgPath)
         if sticker:
             update.message.reply_sticker(sticker.file_id)
         else:
