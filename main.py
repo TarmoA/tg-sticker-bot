@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Send me a picture in a private message to add it to a sticker pack')
+    update.message.reply_text('Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. Start the caption with hyphen - to insert text to the bottom')
 
 
 
@@ -32,14 +32,15 @@ def handlePhoto(bot, update):
         file = bot.get_file(photoObj.file_id)
         file.download(filePath)
         imgPath = resize.resize(filePath)
-        if (message.caption):
-            imgPath = drawText.draw(imgPath, message.caption)
+        #add caption
+        if message.caption and len(message.caption) < 50:
+            imgPath = drawText.draw(imgPath, message.caption.strip())
         sticker = stickerModule.createSticker(bot, user.id, imgPath)
         if sticker:
             update.message.reply_sticker(sticker.file_id)
         else:
             update.message.reply_text('error2')
-        # remove tmp files
+        #remove tmp files
         os.remove(filePath)
         os.remove(filePath.split('.')[0] + '_r.png')
 
