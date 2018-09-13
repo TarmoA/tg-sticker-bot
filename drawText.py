@@ -17,12 +17,11 @@ def splitText(text, font, image):
         return a + "\n" + b
     else:
         return text
-# draw text on image
-def draw(filename, text):
-    # if first letter is "-", dran text in the bottom of image
-    drawOnBottom = text[0] == "-"
-    if drawOnBottom:
-        text = text[1:].strip()
+def draw(filename, text, drawOnBottom=False):
+    """Draw text on the top edge of the image
+        params filename, text, drawOnBottom
+        give drawOnBottom=True to draw text in bottom corner instead
+    """
     image = Image.open(filename)
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype("impact.otf", size=(image.height // 10))

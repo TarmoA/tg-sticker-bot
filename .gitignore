@@ -4,3 +4,4 @@ tmp/*.png
 tmp/*.jpg
 key.json
 *.otf
+*.pyc

@@ -1,5 +1,6 @@
+# encoding: utf-8
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import logging, json, os, sys
+import logging, json, os, sys, re
 import resize
 import sticker as stickerModule
 import drawText
@@ -15,7 +16,12 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. Start the caption with hyphen - to insert text to the bottom')
+    text = """Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. Some of the following options can be given at the start of the caption, separated by whitespace.
+    -b : add text to bottom of the image
+    -t : add text to top of the image(default)
+    -e=EMOJI : choose an emoji for the sticker. Default is 😎
+    """
+    update.message.reply_text(text)
 
 
 
@@ -32,14 +38,24 @@ def handlePhoto(bot, update):
         file = bot.get_file(photoObj.file_id)
         file.download(filePath)
         imgPath = resize.resize(filePath)
+        emoji = '😎'
         #add caption
         if message.caption and len(message.caption) < 50:
-            imgPath = drawText.draw(imgPath, message.caption.strip())
-        sticker = stickerModule.createSticker(bot, user.id, imgPath)
+            # parse caption for arguments
+            args, captionText = parseArgs(message.caption)
+            drawOnBottom = 'b' in args and args['b'] == True # TODO exists?
+            if 'e' in args and args['e']:
+                emoji = args['e']
+            imgPath = drawText.draw(imgPath, captionText.strip(), drawOnBottom)
+        # set name = identifier(not user visible?)
+        setName = 'set_' + str(user.id)
+        #set title = user visible
+        setTitle = user.first_name + '\'s TT_Sticker_Bot stickers'
+        sticker = stickerModule.createSticker(bot, user.id, imgPath, setName, setTitle, emoji)
         if sticker:
             update.message.reply_sticker(sticker.file_id)
         else:
-            update.message.reply_text('error2')
+            update.message.reply_text('error creating sticker')
         #remove tmp files
         os.remove(filePath)
         os.remove(filePath.split('.')[0] + '_r.png')
@@ -52,6 +68,36 @@ def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
 
+
+def parseArgs(text):
+    """Parse CLI style args from string.
+        return a 2-tuple:
+            (
+                dict of: { arg : value},
+                remaining string after stripping args from beginning
+            )
+    """
+    if not text or '-' not in text:
+        return ({}, text)
+    result = {}
+    # regex to match either short args like -s
+    # or long args like -s=sdfdsf
+    regex = re.compile(r'^-[a-z](=[\S]*)?(\s|$)', re.UNICODE)
+    match = regex.match(text)
+    subtext = text
+    while match:
+        found = match.group()
+            #second char from match is the key
+        if len(found) <= 3:
+            #short arg
+            result[found[1]] = True
+        else:
+            #long arg, save value after '='
+            result[found[1]] = found[3:match.end()].strip()
+        #get remaining string still to be matched
+        subtext = subtext[match.end():]
+        match = regex.match(subtext)
+    return (result, subtext)
 
 def main():
     """Start the bot."""
