@@ -21,7 +21,7 @@ def start(bot, update):
     -b : add text to bottom of the image
     -t : add text to top of the image(default)
     -e=EMOJI : choose an emoji for the sticker. Default is 😎
-    -p=PACKNAME : Choose the name of sticker pack to use. Leave empty to use default pack. Naming a non-existing pack will create a new sticker pack.
+    -p=PACKNAME : Choose the name of sticker pack to use. Leave empty to use default pack. Naming a non-existing pack will create a new sticker pack. PACKNAME must not have any whitespace."
     """
     update.message.reply_text(text)
 
