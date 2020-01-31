@@ -11,4 +11,4 @@ install:
 	install key.json /opt/tg_sticker_bot/key.json
 	install start.sh /opt/tg_sticker_bot/start.sh
 	cp -r .env /opt/tg_sticker_bot/
-	install systemd/tg_sticket_bot.service /etc/systemd/system/tg_sticket_bot.service
+	install systemd/tg_sticker_bot.service /etc/systemd/system/tg_sticker_bot.service
