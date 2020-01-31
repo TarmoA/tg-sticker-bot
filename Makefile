@@ -9,5 +9,6 @@ install:
 	install drawText.py /opt/tg_sticker_bot/drawText.py
 	install impact.otf /opt/tg_sticker_bot/impact.otf
 	install key.json /opt/tg_sticker_bot/key.json
-	install requirements.txt /opt/tg_sticker_bot/requirements.txt
+	install start.sh /opt/tg_sticker_bot/start.sh
+	cp -r .env /opt/tg_sticker_bot/
 	install systemd/tg_sticket_bot.service /etc/systemd/system/tg_sticket_bot.service
