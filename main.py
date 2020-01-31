@@ -16,10 +16,12 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    text = """Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. Some of the following options can be given at the start of the caption, separated by whitespace.
+    text = """Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. This bot can only add stickers to packs created by this bot and all sticker packs are also tied to a specific user.
+    Some of the following options can be given at the start of the caption, separated by whitespace:
     -b : add text to bottom of the image
     -t : add text to top of the image(default)
     -e=EMOJI : choose an emoji for the sticker. Default is 😎
+    -p=PACKNAME : Choose the name of sticker pack to use. Leave empty to use default pack. Naming a non-existing pack will create a new sticker pack.
     """
     update.message.reply_text(text)
 
@@ -40,6 +42,7 @@ def handlePhoto(bot, update):
         imgPath = resize.resize(filePath)
         emoji = '😎'
         #add caption
+        customTitle = ''
         if message.caption and len(message.caption) < 50:
             # parse caption for arguments
             args, captionText = parseArgs(message.caption)
@@ -47,10 +50,13 @@ def handlePhoto(bot, update):
             if 'e' in args and args['e']:
                 emoji = args['e']
             imgPath = drawText.draw(imgPath, captionText.strip(), drawOnBottom)
+            if 'p' in args and args['p']:
+                customTitle = args['p']
+
         # set name = identifier(not user visible?)
-        setName = 'set_' + str(user.id)
+        setName = 'set_' + str(user.id) + customTitle
         #set title = user visible
-        setTitle = user.first_name + '\'s TT_Sticker_Bot stickers'
+        setTitle = customTitle or user.first_name + '\'s TT_Sticker_Bot stickers'
         sticker = stickerModule.createSticker(bot, user.id, imgPath, setName, setTitle, emoji)
         if sticker:
             update.message.reply_sticker(sticker.file_id)
