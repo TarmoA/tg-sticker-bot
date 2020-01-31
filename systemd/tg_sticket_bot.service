@@ -1,0 +1,8 @@
+[Unit]
+Description=Telegram sticker bot
+
+[Service]
+ExecStart=/bin/python /opt/tg_sticker_bot/main.py
+
+[Install]
+WantedBy=multi-user.target
