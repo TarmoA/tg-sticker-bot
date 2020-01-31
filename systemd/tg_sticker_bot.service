@@ -3,7 +3,8 @@ Description=Telegram sticker bot
 
 [Service]
 Type=simple
-ExecStart=/opt/tg_sticker_bot/start.sh
+WorkingDirectory=/opt/tg_sticker_bot
+ExecStart=/bin/bash /opt/tg_sticker_bot/start.sh
 
 [Install]
 WantedBy=multi-user.target
