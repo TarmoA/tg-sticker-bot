@@ -1,13 +1,2 @@
-astroid==1.6.3
-autopep8==1.3.5
-certifi==2018.4.16
-future==0.16.0
-isort==4.3.4
-lazy-object-proxy==1.3.1
-mccabe==0.6.1
-Pillow==5.1.0
-pycodestyle==2.4.0
-pylint==1.8.4
-python-telegram-bot==10.1.0
-six==1.11.0
-wrapt==1.10.11
+Pillow
+python-telegram-bot

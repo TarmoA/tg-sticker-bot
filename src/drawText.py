@@ -24,7 +24,7 @@ def draw(filename, text, drawOnBottom=False):
     """
     image = Image.open(filename)
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype("impact.otf", size=(image.height // 10))
+    font = ImageFont.truetype("../data/impact.otf", size=(image.height // 10))
     # split to separate lines
     text = splitText(text, font, image)
     black = (0, 0, 0)

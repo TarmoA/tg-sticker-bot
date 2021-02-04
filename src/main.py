@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
-def start(bot, update):
+def start(update, context):
     """Send a message when the command /start is issued."""
     text = """Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. This bot can only add stickers to packs created by this bot and all sticker packs are also tied to a specific user.
     Some of the following options can be given at the start of the caption, separated by whitespace:
@@ -27,7 +27,7 @@ def start(bot, update):
 
 
 
-def handlePhoto(bot, update):
+def handlePhoto(update, context):
     """Handle a photo sent in by user"""
     message = update.message
     user = update.effective_user
@@ -70,11 +70,6 @@ def handlePhoto(bot, update):
         update.message.reply_text('error')
 
 
-def error(bot, update, error):
-    """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, error)
-
-
 def parseArgs(text):
     """Parse CLI style args from string.
         return a 2-tuple:
@@ -108,10 +103,7 @@ def parseArgs(text):
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
-    if 'HEROKU' in os.environ:
-        key = os.environ['BOT_KEY']
-    else:
-        key = json.loads(open("key.json").read())['key']
+    key = json.loads(open("../config/key.json").read())['key']
 
     updater = Updater(key)
 
@@ -123,8 +115,6 @@ def main():
     # dp.add_handler(CommandHandler("addSticker", addSticker))
     dp.add_handler(MessageHandler(Filters.photo & Filters.private, handlePhoto))
 
-    # log all errors
-    dp.add_error_handler(error)
 
     # Start the Bot
     updater.start_polling()

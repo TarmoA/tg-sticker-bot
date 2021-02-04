@@ -38,12 +38,12 @@ def createSet(bot, userId, filePath, setName, setTitle, emoji='😎'):
     if not file:
         return None
     name = setName + '_by_' + bot.username
-    print name
+    print(name)
     try:
         if bot.createNewStickerSet(userId, name, setTitle, file.file_id, emoji):
             return bot.getStickerSet(name).stickers[-1]
         else:
             return None
     except TelegramError as e:
-        print e
+        print(e)
         return None
