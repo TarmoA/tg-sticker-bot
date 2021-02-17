@@ -1,11 +1,15 @@
 # encoding: utf-8
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import asyncio
 import logging, json, os, sys, re
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import emoji
 import resize
 import sticker as stickerModule
 import drawText
 
-BASE_FILE_PATH = os.path.abspath(os.path.dirname(sys.argv[0])) + "/tmp/{}_{}.jpg"
+BASE_FILE_PATH = "../tmp/{}_{}.jpg"
+DEFAULT_EMOJI = '😎'
+HARCODED_USER_ID_TODO_REPLACE = os.environ['USER_ID']
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -16,48 +20,65 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
     """Send a message when the command /start is issued."""
-    text = """Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. This bot can only add stickers to packs created by this bot and all sticker packs are also tied to a specific user.
-    Some of the following options can be given at the start of the caption, separated by whitespace:
-    -b : add text to bottom of the image
-    -t : add text to top of the image(default)
-    -e=EMOJI : choose an emoji for the sticker. Default is 😎
-    -p=PACKNAME : Choose the name of sticker pack to use. Leave empty to use default pack. Naming a non-existing pack will create a new sticker pack. PACKNAME must not have any whitespace."
+    text = """Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. This bot can only add stickers to packs created by this bot and all sticker packs are also tied to a specific user. Bot can be used in groups also, and the caption should start with "/sticker".
+
+    If the first character of image caption is an emoji, it will be used for the sticker. Start text portion of caption with a "-" to write on the bottom of image instead of top.
     """
     update.message.reply_text(text)
 
+# return file path
+def getImageFromImageMessage(update, context):
+    message = update.message
+    photoObj = message.photo[-1]
+    filePath = BASE_FILE_PATH.format(message.chat_id, message.message_id)
+    file = context.bot.get_file(photoObj.file_id)
+    file.download(filePath)
+    return filePath
 
 
-def handlePhoto(update, context):
+def handlePhoto(update, context, isGroup):
     """Handle a photo sent in by user"""
     message = update.message
     user = update.effective_user
+    usableCaption = message.caption or ''
+    if len(usableCaption):
+        usableCaption = usableCaption.strip()
+    if (isGroup):
+        if not usableCaption or not len(usableCaption) >= 8 or not usableCaption[:8] == '/sticker':
+            return
+        usableCaption = message.caption[8:].strip()
+        setName = 'set_' + str(update.effective_chat.id).replace('-', 'm')
+        setTitle = update.effective_chat.title + ' pack'
+        setOwnerId = HARCODED_USER_ID_TODO_REPLACE
+        member = context.bot.getChatMember(update.effective_chat.id, setOwnerId)
+        if member.status not in ["member", "creator", "administrator"]:
+            return
+    else:
+        setName = 'set_' + str(user.id).replace('-', 'm')
+        setTitle = user.first_name + ' pack'
+        setOwnerId = user.id
+
+    if len(usableCaption) > 50:
+        return update.message.reply_text('caption too long (max 50)')
+    logger.info('id')
+    logger.info(setOwnerId)
     if message.photo and len(message.photo):
         # get full size photo
-        photoObj = message.photo[-1]
-        chatId = message.chat_id
-        messageId = message.message_id
-        filePath = BASE_FILE_PATH.format(chatId, messageId)
-        file = bot.get_file(photoObj.file_id)
-        file.download(filePath)
+        filePath = getImageFromImageMessage(update, context)
         imgPath = resize.resize(filePath)
-        emoji = '😎'
-        #add caption
-        customTitle = ''
-        if message.caption and len(message.caption) < 50:
-            # parse caption for arguments
-            args, captionText = parseArgs(message.caption)
-            drawOnBottom = 'b' in args and args['b'] == True # TODO exists?
-            if 'e' in args and args['e']:
-                emoji = args['e']
-            imgPath = drawText.draw(imgPath, captionText.strip(), drawOnBottom)
-            if 'p' in args and args['p']:
-                customTitle = args['p']
+        stickerEmoji = DEFAULT_EMOJI
+        if usableCaption and emoji.emoji_count(usableCaption[0]) == 1:
 
-        # set name = identifier(not user visible?)
-        setName = 'set_' + str(user.id) + customTitle
-        #set title = user visible
-        setTitle = customTitle or user.first_name + '\'s TT_Sticker_Bot stickers'
-        sticker = stickerModule.createSticker(bot, user.id, imgPath, setName, setTitle, emoji)
+            stickerEmoji = usableCaption[0]
+            usableCaption = usableCaption[1:].strip()
+        #add caption
+        if usableCaption:
+            drawOnBottom = len(usableCaption) > 1 and usableCaption[0] == '-'
+            if (drawOnBottom):
+                usableCaption = usableCaption[1:].strip()
+            imgPath = drawText.draw(imgPath, usableCaption, drawOnBottom)
+
+        sticker = stickerModule.createSticker(context.bot, setOwnerId, imgPath, setName, setTitle, stickerEmoji)
         if sticker:
             update.message.reply_sticker(sticker.file_id)
         else:
@@ -69,37 +90,6 @@ def handlePhoto(update, context):
     else:
         update.message.reply_text('error')
 
-
-def parseArgs(text):
-    """Parse CLI style args from string.
-        return a 2-tuple:
-            (
-                dict of: { arg : value},
-                remaining string after stripping args from beginning
-            )
-    """
-    if not text or '-' not in text:
-        return ({}, text)
-    result = {}
-    # regex to match either short args like -s
-    # or long args like -s=sdfdsf
-    regex = re.compile(r'^-[a-z](=[\S]*)?(\s|$)', re.UNICODE)
-    match = regex.match(text)
-    subtext = text
-    while match:
-        found = match.group()
-            #second char from match is the key
-        if len(found) <= 3:
-            #short arg
-            result[found[1]] = True
-        else:
-            #long arg, save value after '='
-            result[found[1]] = found[3:match.end()].strip()
-        #get remaining string still to be matched
-        subtext = subtext[match.end():]
-        match = regex.match(subtext)
-    return (result, subtext)
-
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
@@ -109,13 +99,13 @@ def main():
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
-
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     # dp.add_handler(CommandHandler("addSticker", addSticker))
-    dp.add_handler(MessageHandler(Filters.photo & Filters.private, handlePhoto))
+    dp.add_handler(MessageHandler(Filters.photo & Filters.private, lambda a, b: handlePhoto(a, b, False)))
+    dp.add_handler(MessageHandler(Filters.photo & Filters.group, lambda a, b: handlePhoto(a, b, True)))
 
-
+    logger.info('go')
     # Start the Bot
     updater.start_polling()
 
