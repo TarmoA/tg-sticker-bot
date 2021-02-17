@@ -60,8 +60,6 @@ def handlePhoto(update, context, isGroup):
 
     if len(usableCaption) > 50:
         return update.message.reply_text('caption too long (max 50)')
-    logger.info('id')
-    logger.info(setOwnerId)
     if message.photo and len(message.photo):
         # get full size photo
         filePath = getImageFromImageMessage(update, context)
@@ -105,7 +103,6 @@ def main():
     dp.add_handler(MessageHandler(Filters.photo & Filters.private, lambda a, b: handlePhoto(a, b, False)))
     dp.add_handler(MessageHandler(Filters.photo & Filters.group, lambda a, b: handlePhoto(a, b, True)))
 
-    logger.info('go')
     # Start the Bot
     updater.start_polling()
 
