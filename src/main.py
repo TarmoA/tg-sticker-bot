@@ -20,9 +20,12 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
     """Send a message when the command /start is issued."""
-    text = """Send me a picture in a private message to add it to a sticker pack. Add a caption to draw it on the sticker. This bot can only add stickers to packs created by this bot and all sticker packs are also tied to a specific user. Bot can be used in groups also, and the caption should start with "/sticker".
+    text = """Send me an image to add to a sticker pack. A new pack is created for each user or group if it does not exist. Add a text caption to draw it on the sticker. If the bot is used in a group, the caption should start with "/sticker".
 
-    If the first character of image caption is an emoji, it will be used for the sticker. Start text portion of caption with a "-" to write on the bottom of image instead of top.
+If the first character of image caption is an emoji, it will be used as the chosen emoji for the sticker. Start text portion of caption with a "-" to write on the bottom of image instead of top.
+
+Example of caption:
+/sticker 🆘 -BOTTOM TEXT
     """
     update.message.reply_text(text)
 
@@ -91,9 +94,11 @@ def handlePhoto(update, context, isGroup):
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
-    key = json.loads(open("../config/key.json").read())['key']
+    token = os.environ.get('TOKEN')
+    if not token:
+        return
 
-    updater = Updater(key)
+    updater = Updater(token)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
