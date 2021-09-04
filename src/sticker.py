@@ -31,7 +31,9 @@ def createSticker(bot, userId, filePath, setName='tt_bot_test', setTitle='TT_Tes
             return None
     except TelegramError as err:
         logging.error(err)
-        return createSet(bot, userId, filePath, setName, setTitle, emoji)
+        if 'Stickerset_invalid' in err:
+            return createSet(bot, userId, filePath, setName, setTitle, emoji)
+        return None
 
 
 def createSet(bot, userId, filePath, setName, setTitle, emoji='😎'):
